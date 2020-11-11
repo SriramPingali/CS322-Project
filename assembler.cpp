@@ -2,6 +2,7 @@
 
 using namespace std;
 
+// Define structure for symbols
 struct symbol
 {
     string name;
@@ -10,12 +11,14 @@ struct symbol
     int set_value;
 };
 
+// Define structure for literals
 struct literal
 {
 	string literal;
 	int address;
 };
 
+// Utility function to check of a string is a number
 bool is_number(const std::string& s)
 {
     int i = 0;
@@ -30,20 +33,7 @@ bool is_number(const std::string& s)
     return !temp.empty() && it == temp.end();
 }
 
-string decToBinary(int n) 
-{ 
-    string bin = "";
-    // Size of an integer is assumed to be 32 bits 
-    for (int i = 7; i >= 0; i--) { 
-        int k = n >> i; 
-        if (k & 1) 
-        	bin += "1";
-        else
-        	bin += "0";
-    }
-    return(bin); 
-} 
-
+// Utility function to convert int to hex
 string int_to_hex(int i)
 {
   stringstream stream;
@@ -54,6 +44,7 @@ string int_to_hex(int i)
 
 map<string, string> mot;
 
+// MOT table
 void mot_init()
 {
 	mot["ldc"] = string("00");
@@ -79,9 +70,13 @@ void mot_init()
 	mot["SET"] = string("14");
 }
 
+// Symbol table
 vector<symbol> sym_table;
+
+// Literal table
 vector<literal> lit_table;
 
+// Utility function to deal with white spaces
 static inline string &trim(string &s) 
 {
     s.erase(find_if(s.rbegin(), s.rend(),
@@ -91,17 +86,15 @@ static inline string &trim(string &s)
     return s;
 }
 
+// Reading instructions and add into literal and symbol table
 void inst_to_table(string instr, int* loc_ptr)
 {
     int loc = *loc_ptr;
-    // Reading instructions and 
-    // add into literal and symbol table
 
     // Identify label and variables
     if(instr.find(':') != string::npos)
     {
         int colon = instr.find(":", 0);
-        // sym_table.push_back({instr.substr(0, colon), loc});
 
         // Instruction could be present after the colon
         if(colon != instr.length() - 1)
@@ -115,6 +108,7 @@ void inst_to_table(string instr, int* loc_ptr)
         	sub_op = trim(sub_op);
         	sub_val = trim(sub_val);
 
+        	// Dealing with set instructions
         	if(sub_op == "SET")
         	{
         		sym_table.push_back({instr.substr(0, colon), loc, 1, stoi(sub_val)});
