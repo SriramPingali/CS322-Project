@@ -18,6 +18,12 @@ struct literal
 	int address;
 };
 
+// Symbol table
+vector<symbol> sym_table;
+
+// Literal table
+vector<literal> lit_table;
+
 // Utility function to check of a string is a number
 bool is_number(const std::string& s)
 {
@@ -31,6 +37,14 @@ bool is_number(const std::string& s)
     std::string::const_iterator it = temp.begin();
     while (it != temp.end() && std::isdigit(*it)) ++it;
     return !temp.empty() && it == temp.end();
+}
+
+// Utility function to check for elements in symbol table
+bool contains(string name)
+{
+   auto iter = find_if(sym_table.begin(), sym_table.end(), 
+               [&](const symbol& ts){return ts.name == name;});
+   return iter != sym_table.end();
 }
 
 // Utility function to convert int to hex
@@ -57,24 +71,18 @@ void mot_init()
 	mot["sub"] = string("07");
 	mot["shl"] = string("08");
 	mot["shr"] = string("09");
-	mot["adj"] = string("0A");
-	mot["a2sp"] = string("0B");
-	mot["sp2a"] = string("0C");
-	mot["call"] = string("0D");
-	mot["return"] = string("0E");
-	mot["brz"] = string("0F");
+	mot["adj"] = string("0a");
+	mot["a2sp"] = string("0b");
+	mot["sp2a"] = string("0c");
+	mot["call"] = string("0d");
+	mot["return"] = string("0e");
+	mot["brz"] = string("0f");
 	mot["brlz"] = string("10");
 	mot["br"] = string("11");
 	mot["HALT"] = string("12");
 	mot["data"] = string("13");
 	mot["SET"] = string("14");
 }
-
-// Symbol table
-vector<symbol> sym_table;
-
-// Literal table
-vector<literal> lit_table;
 
 // Utility function to deal with white spaces
 static inline string &trim(string &s) 
@@ -87,7 +95,7 @@ static inline string &trim(string &s)
 }
 
 // Reading instructions and add into literal and symbol table
-void inst_to_table(string instr, int* loc_ptr)
+void inst_to_table(string instr, int* loc_ptr, int line)
 {
     int loc = *loc_ptr;
 
@@ -96,12 +104,17 @@ void inst_to_table(string instr, int* loc_ptr)
     {
         int colon = instr.find(":", 0);
 
+        if(contains(instr.substr(0, colon)))
+        {
+        	cout << "ERROR: Duplicate Label at line " << line << endl;
+        }
+
         // Instruction could be present after the colon
         if(colon != instr.length() - 1)
         {
         	string subs = instr.substr(colon + 1, instr.length());
         	subs = trim(subs);
-        	inst_to_table(subs, &loc);
+        	inst_to_table(subs, &loc, line);
         	int space = subs.find(" ", 0);
         	string sub_op = subs.substr(0, space);
         	string sub_val = subs.substr(space + 1, subs.length());
@@ -146,6 +159,7 @@ int analyse(string file)
     // Temp str variable for get line
     string line;
     int loc = 0;
+    int line_count = 0;
 
     // Reading the input file
     ifstream MyFile(file);
@@ -164,7 +178,7 @@ int analyse(string file)
             continue;
         }
 
-        inst_to_table(instr, &loc);
+        inst_to_table(instr, &loc, line_count++);
         loc++;
     }
 
@@ -189,7 +203,7 @@ int analyse(string file)
     MyFile.close();
 }
 
-string inst_to_code(string instr, int* loc_ptr)
+string inst_to_code(string instr, int* loc_ptr, int line)
 {
 	// Program Counter
 	int loc = *loc_ptr;
@@ -207,7 +221,7 @@ string inst_to_code(string instr, int* loc_ptr)
         {
         	string subs = instr.substr(colon + 1, instr.length());
         	subs = trim(subs);
-        	string temp = inst_to_code(subs, &loc);
+        	string temp = inst_to_code(subs, &loc, line);
         	temp = temp.substr(9, 9);
         	encoding += temp;
         }
@@ -238,8 +252,20 @@ string inst_to_code(string instr, int* loc_ptr)
         sub_operand = trim(sub_operand);
         sub_operation = trim(sub_operation);
 
-        // Checking for numeral opernad to encode directly
-        if(is_number(sub_operand))
+        // Checking for No operand instructions
+        if(sub_operation == "add" || sub_operation == "sub"
+        		|| sub_operation == "shl"|| sub_operation == "shr"
+        		|| sub_operation == "a2sp"|| sub_operation == "sp2a"
+        		|| sub_operation == "return"|| sub_operation == "HALT")
+        {
+        	encoding += "000000" + mot[sub_operation] + " "; 
+        	if(sub_operation.length() != instr.length())
+			{
+				cout << "ERROR: Operand not expected at line " << line << endl;
+			}
+        }
+        // Checking for numeral operand to encode directly
+        else if(is_number(sub_operand))
         {
         	hex_string = int_to_hex(stoi(sub_operand));
         	encoding += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
@@ -247,10 +273,12 @@ string inst_to_code(string instr, int* loc_ptr)
         // Checking for variable operand to encode address
         else
         {
+        	int defined = 0;
         	for(int i=0; i < sym_table.size(); i++)
         	{
         		if(sym_table[i].name.compare(sub_operand) == 0)
         		{
+        			defined = 1;
         			// SET variables considered numeral
         			if(sym_table[i].set)
         			{
@@ -271,6 +299,14 @@ string inst_to_code(string instr, int* loc_ptr)
         			break;
         		}
         	}
+        	if(sub_operation.length() == instr.length())
+        	{
+        		cout << "ERROR: Operand expected at line " << line << endl;
+        	}
+        	else if(!defined)
+        	{
+        		cout << "ERROR: Unknown Symbol as operand at line " << line << endl;
+        	}
         }
         encoding += instr + "\n";
     }
@@ -284,6 +320,7 @@ int synthesize(string file, string out_file)
 
     // Program Counter
     int loc = 0;
+    int line_count = 1;
 
     // Reading the input file
     ifstream MyFile(file);
@@ -302,11 +339,13 @@ int synthesize(string file, string out_file)
         // Skip empty lines
         if(instr == "")
         {
+            line_count++;
+            // cout << "WARNING: EMPTY LINE AT LINE " << line_count << endl;
             continue;
         }
 
         // Write Encoded instruction into listing file
-        outfile << inst_to_code(instr, &loc);
+        outfile << inst_to_code(instr, &loc, line_count++);
         loc++;
     } 
     outfile.close();
