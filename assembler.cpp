@@ -14,7 +14,7 @@ struct symbol
 // Define structure for literals
 struct literal
 {
-	string literal;
+	int literal;
 	int address;
 };
 
@@ -23,6 +23,16 @@ vector<symbol> sym_table;
 
 // Literal table
 vector<literal> lit_table;
+
+// Utility function to deal with white spaces
+static inline string &trim(string &s) 
+{
+    s.erase(find_if(s.rbegin(), s.rend(),
+            not1(ptr_fun<int, int>(isspace))).base(), s.end());
+    s.erase(s.begin(), find_if(s.begin(), s.end(),
+            not1(ptr_fun<int, int>(isspace))));
+    return s;
+}
 
 // Utility function to check of a string is a number
 bool is_number(const std::string& s)
@@ -34,9 +44,28 @@ bool is_number(const std::string& s)
     {
         temp = s.substr(1, s.length());
     }
+    else if(s.find("0x") == 0) {
+        temp = s.substr(2),16;
+    }
     std::string::const_iterator it = temp.begin();
     while (it != temp.end() && std::isdigit(*it)) ++it;
     return !temp.empty() && it == temp.end();
+}
+
+// Utility function for String in any base to decimal
+int tonum(string s) {
+    s = trim(s);
+    if(s.find("0x") == 0) {
+        return stoul(s, nullptr, 16);
+    } else if(s.find("0") == 0) {
+        return stoul(s, nullptr, 8);
+    } else if(s.find("-") == 0) {
+        return -stoul(s.substr(1, s.length()), nullptr, 10);
+    } else if(s.find("+") == 0) {
+        return stoul(s.substr(1, s.length()), nullptr, 10);
+    } else {
+        return stoul(s, nullptr, 10);
+    }
 }
 
 // Utility function to check for elements in symbol table
@@ -56,9 +85,21 @@ string int_to_hex(int i)
   return stream.str();
 }
 
-map<string, string> mot;
+// Utility function for checking correct label name format
+int isValidLabel(string label) {
+    if( !((label[0] >= 'a' && label[0] <= 'z') || (label[0] >= 'A' && label[0] <= 'Z')) ) return false;
+    
+    for(int i = 0; i < label.length(); i++) {
+        if( !( isdigit(label[i]) || (label[0] >= 'a' && label[0] <= 'z') || (label[0] >= 'A' && label[0] <= 'Z') ) ) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 // MOT table
+map<string, string> mot;
 void mot_init()
 {
 	mot["ldc"] = string("00");
@@ -84,20 +125,11 @@ void mot_init()
 	mot["SET"] = string("14");
 }
 
-// Utility function to deal with white spaces
-static inline string &trim(string &s) 
-{
-    s.erase(find_if(s.rbegin(), s.rend(),
-            not1(ptr_fun<int, int>(isspace))).base(), s.end());
-    s.erase(s.begin(), find_if(s.begin(), s.end(),
-            not1(ptr_fun<int, int>(isspace))));
-    return s;
-}
-
 // Reading instructions and add into literal and symbol table
-void inst_to_table(string instr, int* loc_ptr, int line)
+string inst_to_table(string instr, int* loc_ptr, int line)
 {
     int loc = *loc_ptr;
+    string errors = "";
 
     // Identify label and variables
     if(instr.find(':') != string::npos)
@@ -107,6 +139,7 @@ void inst_to_table(string instr, int* loc_ptr, int line)
         if(contains(instr.substr(0, colon)))
         {
         	cout << "ERROR: Duplicate Label at line " << line << endl;
+        	errors += "ERROR: Duplicate Label at line " + to_string(line) + "\n";
         }
 
         // Instruction could be present after the colon
@@ -120,6 +153,12 @@ void inst_to_table(string instr, int* loc_ptr, int line)
         	string sub_val = subs.substr(space + 1, subs.length());
         	sub_op = trim(sub_op);
         	sub_val = trim(sub_val);
+
+        	if(!isValidLabel(instr.substr(0, colon)))
+        	{
+        		cout << "WARNING: Incorrect label format at line " << line << endl;
+        		errors += "WARNING: Incorrect label format at line " + to_string(line) + "\n";
+        	}
 
         	// Dealing with set instructions
         	if(sub_op == "SET")
@@ -149,17 +188,18 @@ void inst_to_table(string instr, int* loc_ptr, int line)
         // Checking for numeral 
         if(is_number(subs))
         {
-        	lit_table.push_back({subs, -1});
+        	lit_table.push_back({tonum(subs), -1});
         }
     }
+    return(errors);
 }
 
-int analyse(string file)
+void analyse(string file, ofstream& logfile)
 {
     // Temp str variable for get line
     string line;
     int loc = 0;
-    int line_count = 0;
+    int line_count = 1;
 
     // Reading the input file
     ifstream MyFile(file);
@@ -178,7 +218,7 @@ int analyse(string file)
             continue;
         }
 
-        inst_to_table(instr, &loc, line_count++);
+        logfile << inst_to_table(instr, &loc, line_count++);
         loc++;
     }
 
@@ -203,13 +243,17 @@ int analyse(string file)
     MyFile.close();
 }
 
-string inst_to_code(string instr, int* loc_ptr, int line)
+tuple<string, string, string> inst_to_code(string instr, int* loc_ptr, int line)
 {
 	// Program Counter
 	int loc = *loc_ptr;
 
-	// Hex Code of Program COunter
+	// Hex Code of Program Counter
 	string encoding = int_to_hex(loc) + " ";
+
+	// Warnings and errors
+	string errors = "";
+	string machine_code = "";
 
     // Identify label and variables
     if(instr.find(':') != string::npos)
@@ -221,7 +265,8 @@ string inst_to_code(string instr, int* loc_ptr, int line)
         {
         	string subs = instr.substr(colon + 1, instr.length());
         	subs = trim(subs);
-        	string temp = inst_to_code(subs, &loc, line);
+        	tie(encoding, errors, machine_code) = inst_to_code(subs, &loc, line);
+        	string temp = encoding;
         	temp = temp.substr(9, 9);
         	encoding += temp;
         }
@@ -252,23 +297,33 @@ string inst_to_code(string instr, int* loc_ptr, int line)
         sub_operand = trim(sub_operand);
         sub_operation = trim(sub_operation);
 
+        // Checking for invalid mnemonics
+        if(mot[sub_operation] == "")
+        {
+        	errors += "ERROR: Mnemonic not defined at line " + to_string(line) + "\n";
+        	cout << "ERROR: Mnemonic not defined at line " << line << endl;
+        }
+
         // Checking for No operand instructions
-        if(sub_operation == "add" || sub_operation == "sub"
+        else if(sub_operation == "add" || sub_operation == "sub"
         		|| sub_operation == "shl"|| sub_operation == "shr"
         		|| sub_operation == "a2sp"|| sub_operation == "sp2a"
         		|| sub_operation == "return"|| sub_operation == "HALT")
         {
         	encoding += "000000" + mot[sub_operation] + " "; 
+        	machine_code += "000000" + mot[sub_operation] + " "; 
         	if(sub_operation.length() != instr.length())
 			{
+				errors += "ERROR: Operand not expected at line " + to_string(line) + "\n";
 				cout << "ERROR: Operand not expected at line " << line << endl;
 			}
         }
         // Checking for numeral operand to encode directly
         else if(is_number(sub_operand))
         {
-        	hex_string = int_to_hex(stoi(sub_operand));
+        	hex_string = int_to_hex(tonum(sub_operand));
         	encoding += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
+        	machine_code += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
         }
         // Checking for variable operand to encode address
         else
@@ -296,37 +351,39 @@ string inst_to_code(string instr, int* loc_ptr, int line)
         				hex_string = int_to_hex(sym_table[i].address);
         			}
         			encoding += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
+        			machine_code += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
         			break;
         		}
         	}
         	if(sub_operation.length() == instr.length())
         	{
+        		errors += "ERROR: Operand expected at line " + to_string(line) + "\n";
         		cout << "ERROR: Operand expected at line " << line << endl;
         	}
         	else if(!defined)
         	{
+        		errors += "ERROR: Unknown Symbol as operand at line " + to_string(line) + "\n";
         		cout << "ERROR: Unknown Symbol as operand at line " << line << endl;
         	}
         }
         encoding += instr + "\n";
     }
-    return(encoding);
+    return(make_tuple(encoding, errors, machine_code));
 }
 
-int synthesize(string file, string out_file)
+void synthesize(string file, ofstream& outfile, ofstream& logfile, ofstream& objfile)
 {
     // Temp str variable for get line
     string line;
 
     // Program Counter
     int loc = 0;
+
+    // Line counter
     int line_count = 1;
 
     // Reading the input file
     ifstream MyFile(file);
-
-    // Defining output listing file
-    ofstream outfile(out_file);
 
     // Read individual lines
     while (getline (MyFile, line)) 
@@ -340,15 +397,23 @@ int synthesize(string file, string out_file)
         if(instr == "")
         {
             line_count++;
-            // cout << "WARNING: EMPTY LINE AT LINE " << line_count << endl;
             continue;
         }
 
         // Write Encoded instruction into listing file
-        outfile << inst_to_code(instr, &loc, line_count++);
+        string encoding, errors, machine_code;
+        tie(encoding, errors, machine_code) = inst_to_code(instr, &loc, line_count++);
+        outfile << encoding;
+        // objfile << machine_code;
+        // uint32_t temp = streamtohex("0x" + machine_code);
+        if(machine_code != "")
+        {
+        	uint32_t temp = stoul("0x" + trim(machine_code), nullptr, 16);
+        	objfile.write((char *)&temp, sizeof(temp));
+        }	
+        logfile << errors;
         loc++;
-    } 
-    outfile.close();
+    }
 }
 
 int main(int argc, char* argv[]) 
@@ -362,9 +427,25 @@ int main(int argc, char* argv[])
 	// Argument for output file
 	string out_file = in_file.substr(0, in_file.find(".", 0)) + ".L";
 
+	// Argument for log file
+	string log_file = in_file.substr(0, in_file.find(".", 0)) + ".log";
+
+	// Argument for object file
+	string obj_file = in_file.substr(0, in_file.find(".", 0)) + ".o";
+
+	// Defining output listing, log file
+    ofstream outfile(out_file);
+    ofstream logfile(log_file);
+    ofstream objfile(obj_file,ios::out | ios::binary);//ofstream::binary);
+
     // Pass-1 of assembly, analysis phase
-    analyse(in_file);
+    analyse(in_file, logfile);
 
     // Pass-2 of assembly, synthesis phase
-    synthesize(in_file, out_file);
+    synthesize(in_file, outfile, logfile, objfile);
+
+    // Close files
+    outfile.close();
+    logfile.close();
+    objfile.close();
 }
