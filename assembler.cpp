@@ -142,6 +142,12 @@ string inst_to_table(string instr, int* loc_ptr, int line)
         	errors += "ERROR: Duplicate Label at line " + to_string(line) + "\n";
         }
 
+        if(!isValidLabel(instr.substr(0, colon)))
+        {
+        	cout << "WARNING: Incorrect label format at line " << line << endl;
+        	errors += "WARNING: Incorrect label format at line " + to_string(line) + "\n";
+        }
+
         // Instruction could be present after the colon
         if(colon != instr.length() - 1)
         {
@@ -153,12 +159,6 @@ string inst_to_table(string instr, int* loc_ptr, int line)
         	string sub_val = subs.substr(space + 1, subs.length());
         	sub_op = trim(sub_op);
         	sub_val = trim(sub_val);
-
-        	if(!isValidLabel(instr.substr(0, colon)))
-        	{
-        		cout << "WARNING: Incorrect label format at line " << line << endl;
-        		errors += "WARNING: Incorrect label format at line " + to_string(line) + "\n";
-        	}
 
         	// Dealing with set instructions
         	if(sub_op == "SET")
@@ -215,6 +215,7 @@ void analyse(string file, ofstream& logfile)
         // Skip empty lines
         if(instr == "")
         {
+            line_count++;
             continue;
         }
 
