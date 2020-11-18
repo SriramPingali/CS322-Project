@@ -65,28 +65,32 @@ void trace(uint32_t instr_code)
 	}
 	else if(operation == "08")
 	{
-		cout << instr << endl;
+		A = B * 256;
 	}
-	// else if(operation == "09")
-	// {
-	// 	cout << instr << endl;
-	// }
-	// else if(operation == "0a")
-	// {
-	// 	cout << instr << endl;
-	// }
-	// else if(operation == "0b")
-	// {
-	// 	cout << instr << endl;
-	// }
-	// else if(operation == "0c")
-	// {
-	// 	cout << instr << endl;
-	// }
-	// else if(operation == "0d")
-	// {
-	// 	cout << instr << endl;
-	// }
+	else if(operation == "09")
+	{
+		A = B / 256;
+	}
+	else if(operation == "0a")
+	{
+		SP += operand;
+	}
+	else if(operation == "0b")
+	{
+		SP = A;
+		A = B;
+	}
+	else if(operation == "0c")
+	{
+		B = A;
+		A = SP;
+	}
+	else if(operation == "0d")
+	{
+		B = A;
+		A = PC;
+		PC = PC + operand;
+	}
 	// else if(operation == "0e")
 	// {
 	// 	cout << instr << endl;

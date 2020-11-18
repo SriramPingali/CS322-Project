@@ -253,6 +253,7 @@ tuple<string, string, string> inst_to_code(string instr, int* loc_ptr, int line)
 	string encoding = int_to_hex(loc) + " ";
 
 	// Warnings and errors
+    string encoding_ = "";
 	string errors = "";
 	string machine_code = "";
 
@@ -266,8 +267,8 @@ tuple<string, string, string> inst_to_code(string instr, int* loc_ptr, int line)
         {
         	string subs = instr.substr(colon + 1, instr.length());
         	subs = trim(subs);
-        	tie(encoding, errors, machine_code) = inst_to_code(subs, &loc, line);
-        	string temp = encoding;
+        	tie(encoding_, errors, machine_code) = inst_to_code(subs, &loc, line);
+        	string temp = encoding_;
         	temp = temp.substr(9, 9);
         	encoding += temp;
         }
