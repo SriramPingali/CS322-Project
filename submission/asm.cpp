@@ -1,9 +1,11 @@
-// ------------------------------------------------------------------
-// Declaration of Authorship
-// Name : P.V.Sriram
-// Roll No. 1801CS37
-// Date : 19/11/2020
-// --------------------------------------------------------------------
+/*****************************************************************************
+TITLE: Claims                                                                                                                               
+AUTHOR: P. V. Sriram
+ROLL NO.: 1801CS37
+Declaration of Authorship
+This txt file, claims.txt, is part of the assignment of CS321 at the 
+department of Computer Science and Engg, IIT Patna . 
+*****************************************************************************/
 
 #include <bits/stdc++.h>
 
@@ -331,11 +333,11 @@ tuple<string, string, string> inst_to_code(string instr, int* loc_ptr, int line)
         else if(is_number(sub_operand))
         {
         	hex_string = int_to_hex(tonum(sub_operand));
-            // if(sub_operation == "SET" || sub_operation == "data")
-            //     encoding += hex_string + " ";
-            // else
-            //     encoding += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
-        	encoding += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
+            if(sub_operation == "SET" || sub_operation == "data")
+                encoding += hex_string + " ";
+            else
+                encoding += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
+        	// encoding += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
         	machine_code += hex_string.substr(hex_string.length() - 6, hex_string.length()) + mot[sub_operation] + " "; 
         }
         // Checking for variable operand to encode address

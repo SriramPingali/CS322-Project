@@ -1,0 +1,100 @@
+/*****************************************************************************
+TITLE: Claims																																
+AUTHOR: P. V. Sriram
+ROLL NO.: 1801CS37
+Declaration of Authorship
+This txt file, claims.txt, is part of the assignment of CS321 at the 
+department of Computer Science and Engg, IIT Patna . 
+*****************************************************************************/
+
+Files:
+==========
+*All the files I submitted, asm.cpp and claims.txt, have my name and student id at the start, along with a declaration of authorship.
+
+The evidence for Assembler including the output files from the X (eg five)  test examples has also been uploaded. They are test1(3 output files), test2(3 output files), test3
+(1 output file). All the test files have been tested and work properly. 
+
+*My cpp program did not show any errors and warnings when i compiled it with
+g++ asm.cpp
+
+*Program is compilable with g++ asm.c -o asm
+
+=============================
+Program format and structure:
+=============================
+1. The assembler:
+
+    * with two data structures to store respectively labels and mnemonic table with expected operands.
+    * uses a single routine for both passes.
+    * detects label erros.
+    * consistent and sensible formatting with sensible program structure. 
+    * sensible variable, function & type names with explanatory comments.
+		* advanced listing file.
+		* assembles test programs.
+	  * can implements and demonstrates the instruction SET.
+
+=============================
+Testing:
+=============================
+
+1. The assembler:
+
+I have tested  X/ five examples shown as bellow. The errors only occurred in the file test2.asm and 
+the program immediately stopped on the second pass. 
+
+The others were tested without any errors detected and produced three output files, listing file, 
+error log file and machine readable object file, for each example. 
+ 
+
+1)
+#Input: asm test1.asm
+#Output: 
+a. test1.l 
+b. test1.log (without any error messages)
+c. test1.o
+
+2)
+#Input:asm test2.asm
+#Output: 
+a. test2.l 
+b. test2.log (error messages shown as below in log file and terminal)
+c. test2.o
+
+error messages:
+ERROR: Duplicate Label at line 4
+WARNING: Incorrect label format at line 10
+ERROR: Unknown Symbol as operand at line 5
+ERROR: Unknown Symbol as operand at line 6
+ERROR: Operand expected at line 7
+ERROR: Operand not expected at line 8
+ERROR: Unknown Symbol as operand at line 9
+ERROR: Mnemonic not defined at line 11
+ERROR: Mnemonic not defined at line 12
+
+3)
+#Input:./asm test3.asm
+#Output: 
+a. test3.l 
+b. test3.log (without any error messages)
+c. test3.o
+
+4)
+#Input:./asm test4.asm
+#Output: 
+a. test4.l 
+b. test4.log (without any error messages)
+c. test4.o
+
+4)
+#Input:./asm test4.asm
+#Output: 
+a. test4.l 
+b. test4.log (without any error messages)
+c. test4.o
+
+5) 
+#Input:./asm MyBubbleSort.asm
+#Output: 
+a. MyBubbleSort.l 
+b. MyBubbleSort.log (without any error messages)
+c. MyBubbleSort.o
