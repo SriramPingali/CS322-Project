@@ -3,7 +3,7 @@ TITLE: Claims
 AUTHOR: P. V. Sriram
 ROLL NO.: 1801CS37
 Declaration of Authorship
-This txt file, claims.txt, is part of the assignment of CS321 at the 
+This cpp file, asm.cpp, is part of the assignment of CS321 at the 
 department of Computer Science and Engg, IIT Patna . 
 *****************************************************************************/
 

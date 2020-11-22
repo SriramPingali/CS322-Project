@@ -1,11 +1,8 @@
-;/*****************************************************************************
-;TITLE: Claims                                                                      ;                                                       
-;AUTHOR: P. V. Sriram
-;ROLL NO.: 1801CS37
-;Declaration of Authorship
-;This cpp file, test5.cpp, is part of the assignment of CS321 at the 
-;department of Computer Science and Engg, IIT Patna . 
-;*****************************************************************************/
+; Name: M.Maheeth Reddy
+; Roll: 1801CS31
+; I hereby declare that this test file is my own unaided work.
+; test06.asm
+; program to find sum of first n natural numbers
 call sumN
 HALT
 
