@@ -41,7 +41,7 @@ tuple<int32_t, int32_t> inst_to_operand_opcode(int32_t instr)
 
 // Utility function for usage instructions
 void prompt() {
-    cout << "Usage: ./emu [option] file.o" << endl;
+    cout << "Usage: ./emu.exe [option] file.o" << endl;
     cout << "Options:" << endl;
     cout << "\t-trace\tshow instruction trace" << endl;
     cout << "\t-before\tshow memory dump before execution" << endl;
@@ -50,18 +50,21 @@ void prompt() {
 }
 
 // Utility function for memory dump 
-void mem_dump(int poc)
+void mem_dump(int poc, ofstream& trcfile)
 {
 	cout << "Dumping from memory";
+	trcfile << "Dumping from memory";
 
 	for (int i = 0; i < poc; i++)
 	{
 		if(!(i % 4))
 		{
 			cout << endl << endl << int_to_hex(i) << "\t" << int_to_hex(memory[i]) << " ";
+			trcfile << endl << endl << int_to_hex(i) << "\t" << int_to_hex(memory[i]) << " ";
 		}
 		else
 			cout << int_to_hex(memory[i]) << " ";
+			trcfile << int_to_hex(memory[i]) << " ";
 	}
 	cout << endl;
 }
@@ -120,7 +123,7 @@ void mot_init()
 }
 
 // Function to trace individual instructions
-int trace(int PC, int poc)
+int trace(int PC, int poc, ofstream& trcfile)
 {
 	// Number of executed instructions
 	int count = 0;
@@ -142,6 +145,10 @@ int trace(int PC, int poc)
 
 		// Print statement for tracing
 		cout << "PC: " << int_to_hex(PC) << "\tSP: " << int_to_hex(SP) << "\tA: " 
+		<< int_to_hex(A) << "\tB: " << int_to_hex(B) << "\t" << mot[operation] 
+		<< " " <<operand << endl << endl;
+
+		trcfile << "PC: " << int_to_hex(PC) << "\tSP: " << int_to_hex(SP) << "\tA: " 
 		<< int_to_hex(A) << "\tB: " << int_to_hex(B) << "\t" << mot[operation] 
 		<< " " <<operand << endl << endl;
 
@@ -248,11 +255,18 @@ int main(int argc, char* argv[])
 	// Argument for input file
 	string in_file = argv[2];
 
+	// Argument for output file
+	string trace_file = in_file.substr(0, in_file.find(".", 0)) + ".trace";
+
 	// Input object file
-	ifstream infile; 
+	ifstream infile;
+
+	// Output trace file
+	ofstream trcfile; 
 
 	// Open file
 	infile.open(in_file, ios::out | ios::binary);
+	trcfile.open(trace_file);
 
 	// 32 bit integer for machine code
 	int32_t instr_code;
@@ -293,15 +307,18 @@ int main(int argc, char* argv[])
 	
 	// Memory dump before execution
 	if(string(argv[1]) == "-before")
-		mem_dump(poc);
+		mem_dump(poc, trcfile);
 
 	// Tracing for each executed instruction
 	if(string(argv[1]) == "-trace")
-		trace(0, poc);
+		trace(0, poc, trcfile);
 
 	// Memory dump after execution
 	if(string(argv[1]) == "-after")
-		mem_dump(poc);
+	{
+		trace(0, poc, trcfile);
+		mem_dump(poc, trcfile);
+	}
 
 	// Close file
 	infile.close();
