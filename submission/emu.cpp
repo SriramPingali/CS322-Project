@@ -26,6 +26,9 @@ int32_t A, B, PC, SP;
 // Global memory array
 int32_t memory[10000];
 
+// Vector to store pc of data variables
+vector<int> data_pc;
+
 // Utility function to retrieve operand and opcode from machine code
 tuple<int32_t, int32_t> inst_to_operand_opcode(int32_t instr)
 {
@@ -151,6 +154,12 @@ int trace(int PC, int poc, ofstream& trcfile)
 		trcfile << "PC: " << int_to_hex(PC) << "\tSP: " << int_to_hex(SP) << "\tA: " 
 		<< int_to_hex(A) << "\tB: " << int_to_hex(B) << "\t" << mot[operation] 
 		<< " " <<operand << endl << endl;
+
+		if (std::find(data_pc.begin(), data_pc.end(), PC) != data_pc.end())
+		{
+        	PC++;
+        	continue;
+		}
 
 		// Switch case for individual instructios
 		switch(operation) {
@@ -283,7 +292,8 @@ int main(int argc, char* argv[])
 		// If instruction is DATA or SET then store the value into memory
 		if(operation == 19 || operation == 20)
 		{
-			memory[poc++] = operand;
+			memory[poc] = operand;
+			data_pc.push_back(poc++);
 		}
 
 		// Other instructions stored in memory

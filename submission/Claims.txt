@@ -114,13 +114,6 @@ b. test6.log (without any error messages)
 c. test6.o
 
 7)
-#Input:./asm.exe test7.asm
-#Output: 
-a. test7.l 
-b. test7.log (without any error messages)
-c. test7.o
-
-8)
 #Input:./asm.exe MyBubbleSort.asm
 #Output: 
 a. MyBubbleSort.l 
@@ -160,7 +153,7 @@ Infinite loop detected
 #Input:./emu.exe -trace test5.o
 #Output: test5.TRACE
 
-11 number of instructions executed
+41 number of instructions executed
 
 5)
 #Input:./emu.exe -trace test6.o
@@ -169,12 +162,6 @@ Infinite loop detected
 1403 number of instructions executed
 
 6)
-#Input:./emu.exe -trace test7.o
-#Output: test7.TRACE
-
-10276 number of instructions executed
-
-7)
 #Input:./emu.exe -trace MyBubbleSort.o
 #Output: MyBubbleSort.TRACE
 
